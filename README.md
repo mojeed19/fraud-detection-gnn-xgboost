@@ -5,6 +5,21 @@ A cost‑sensitive fraud detection system was developed using a Graph Neural Net
 ## Keywords
 
 Fraud detection, Graph Neural Networks, GraphSAGE, XGBoost, cost‑sensitive learning, isotonic calibration, expected calibration error, SHAP, financial risk.
+## Aim
+
+To develop a cost‑sensitive, uncertainty‑aware fraud detection system using Graph Neural Networks (GNNs) that captures relational patterns among financial transactions, quantifies predictive uncertainty, and optimises decision thresholds to minimise expected financial loss, while providing explainable predictions for banking compliance.
+
+## Objectives
+
+1. **Construct a transaction graph** from the Credit Card Fraud Detection Dataset 2023 (creditcard_2023.csv) using k‑nearest neighbours (k‑NN) in the feature space, linking transactions with similar characteristics.  
+2. **Build a GraphSAGE model** (a type of GNN) that propagates information across the graph to learn node‑level fraud probabilities.  
+3. **Incorporate a cost‑sensitive loss function** (weighted binary cross‑entropy) where false negatives (missed fraud) are penalised 50× more than false positives (legitimate transactions flagged as fraud).  
+4. **Quantify epistemic uncertainty** via the model’s output variance (not a full ensemble; instead we rely on the inherent variability of the GNN).  
+5. **Calibrate the XGBoost baseline** using isotonic regression to improve probability reliability (Expected Calibration Error ≤ 0.05).  
+6. **Optimise the decision threshold** to minimise expected cost with \( C_{FN} = \$500 \), \( C_{FP} = \$10 \).  
+7. **Evaluate using Average Precision (AP)** (target ≥ 0.95), **Expected Calibration Error (ECE)** (target ≤ 0.05), **Brier score**, and **cost saving**.  
+8. **Provide explainability** using SHAP values on the XGBoost baseline to identify the most influential features for each transaction.
+
 
 ## Data Source
 
