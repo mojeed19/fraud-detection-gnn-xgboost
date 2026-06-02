@@ -11,93 +11,10 @@ Fraud detection, Graph Neural Networks, GraphSAGE, XGBoost, cost‑sensitive lea
 The dataset used is **Credit Card Fraud Detection Dataset 2023** (`creditcard_2023.csv`). It contains 568,630 transactions with 29 anonymised features (V1–V28) plus the `Amount` and `Class` (target) columns. The fraud rate is exactly 50% – a balanced design to facilitate model training. The dataset was obtained from a publicly available source (e.g., Kaggle). No missing values were present; the `id` column was dropped as non‑informative.
 
 ## Proving Mathematical Methodology
-
-### 1. Graph Construction
-
-An undirected graph \( G = (V, E) \) is built from a subsampled set of 20,000 transactions (stratified to preserve 50% fraud rate). Each node \( v_i \) represents a transaction with feature vector \( \mathbf{x}_i \in \mathbb{R}^{29} \). Edges are added using \( k \)-nearest neighbours (\( k=5 \)) with cosine distance:
-
-\[
-\text{cosine distance}(\mathbf{x}_i, \mathbf{x}_j) = 1 - \frac{\mathbf{x}_i \cdot \mathbf{x}_j}{\|\mathbf{x}_i\|_2 \|\mathbf{x}_j\|_2}.
-\]
-
-The resulting adjacency matrix \( \mathbf{A} \) is stored as a sparse tensor. The graph has 20,000 nodes and 100,000 edges (20,000 × 5, but each edge counted once).
-
-### 2. GraphSAGE Model
-
-A two‑layer GraphSAGE network (Hamilton et al., 2017) is used. The propagation rule at layer \( \ell \) is:
-
-\[
-\mathbf{h}_i^{(\ell+1)} = \sigma \left( \mathbf{W}_1^{(\ell)} \mathbf{h}_i^{(\ell)} + \mathbf{W}_2^{(\ell)} \cdot \text{mean}_{j \in \mathcal{N}(i)} \mathbf{h}_j^{(\ell)} \right),
-\]
-
-where \( \mathbf{h}_i^{(\ell)} \) is the hidden representation of node \( i \), \( \mathcal{N}(i) \) its neighbours, \( \sigma \) the ReLU activation, and \( \mathbf{W}_1^{(\ell)}, \mathbf{W}_2^{(\ell)} \) learnable weight matrices. The final layer outputs a 2‑dimensional vector passed through softmax to obtain fraud probability \( \hat{p}_i = P(y_i = 1 \mid \mathbf{x}_i, G) \).
-
-### 3. Cost‑Sensitive Loss
-
-Weighted binary cross‑entropy penalises false negatives 50× more than false positives:
-
-\[
-\mathcal{L} = -\frac{1}{N} \sum_{i=1}^{N} \left[ w_{y_i} \cdot \big( y_i \log \hat{p}_i + (1-y_i) \log (1-\hat{p}_i) \big) \right],
-\]
-
-with \( w_0 = 1 \) (cost of false positive) and \( w_1 = 50 \) (cost of false negative).
-
-### 4. Isotonic Calibration (XGBoost Baseline)
-
-Raw probabilities \( \hat{p}_i^{\text{(raw)}} \) from XGBoost are calibrated using isotonic regression on a held‑out calibration set (20% of training data). The calibrated probability is:
-
-\[
-\hat{p}_i^{\text{(cal)}} = \phi(\hat{p}_i^{\text{(raw)}}), \quad \phi \text{ monotone non‑decreasing},
-\]
-
-where \( \phi \) minimises squared error \( \sum_i (\phi(\hat{p}_i^{\text{(raw)}}) - y_i)^2 \) under the monotonicity constraint.
-
-### 5. Expected Calibration Error (ECE)
-
-The probability range \([0,1]\) is split into \( M=10 \) equal‑frequency bins \( B_m \). For each bin, compute accuracy and confidence:
-
-\[
-\text{acc}(B_m) = \frac{1}{|B_m|} \sum_{i \in B_m} \mathbf{1}_{y_i = 1}, \qquad
-\text{conf}(B_m) = \frac{1}{|B_m|} \sum_{i \in B_m} \hat{p}_i.
-\]
-
-Then
-
-\[
-\text{ECE} = \sum_{m=1}^{M} \frac{|B_m|}{N} \left| \text{acc}(B_m) - \text{conf}(B_m) \right|.
-\]
-
-A perfectly calibrated model has ECE = 0; target ≤ 0.05.
-
-### 6. Cost‑Optimal Threshold
-
-For a decision threshold \( \tau \), predict fraud if \( \hat{p}_i \ge \tau \). Expected total cost on the test set:
-
-\[
-R(\tau) = C_{FN} \cdot FN(\tau) + C_{FP} \cdot FP(\tau),
-\]
-
-with \( C_{FN} = \$500 \) (missed fraud), \( C_{FP} = \$10 \) (false alarm). The optimal threshold \( \tau^* = \arg\min_{\tau} R(\tau) \) is found by grid search over 101 points.
-
-### 7. Average Precision (AP)
-
-AP is the area under the precision‑recall curve, computed as:
-
-\[
-\text{AP} = \sum_{k=1}^{K} (R_k - R_{k-1}) P_k,
-\]
-
-where \( P_k \) and \( R_k \) are precision and recall at threshold \( \tau_k \). Target AP ≥ 0.95.
-
-### 8. SHAP Explainability
-
-For the XGBoost model, SHAP (SHapley Additive exPlanations) provides additive feature attribution:
-
-\[
-\hat{p}_i = \phi_0 + \sum_{j=1}^{d} \phi_j z_{ij},
-\]
-
-where \( \phi_j \) is the contribution of feature \( j \) to the prediction. SHAP values satisfy local accuracy, consistency, and missingness.
+<img width="910" height="413" alt="image" src="https://github.com/user-attachments/assets/378bad1b-9eff-467f-8c81-f375d5807eab" />
+<img width="986" height="496" alt="image" src="https://github.com/user-attachments/assets/9f2ea3a4-4dd6-438b-a833-17dd2c6926ee" />
+<img width="1003" height="458" alt="image" src="https://github.com/user-attachments/assets/2a265da9-e6a7-4e9f-9c79-96d56dd9d2f7" />
+<img width="995" height="483" alt="image" src="https://github.com/user-attachments/assets/08069689-da07-4197-8c92-c4473027fba7" />
 
 ## Key Insight
 
